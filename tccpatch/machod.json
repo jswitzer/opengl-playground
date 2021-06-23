@@ -1,0 +1,23 @@
+{"structs":[{
+  "shortname": "ma64h",
+  "longname": "ma64_header",
+  "fields": [ 
+    [ "uint32_t", "magic"],
+    [ "uint32_t", "cputype"],
+    [ "uint32_t", "cpusubtype"],
+    [ "uint32_t", "filetype"],
+    [ "uint32_t", "nloadcmds"],
+    [ "uint32_t", "szloadcmds"],
+    [ "uint32_t", "flags"],
+    [ "uint32_t", "reserved"]
+  ]
+},
+{
+  "shortname": "ma64c",
+  "longname": "ma64_command",
+  "fields": [ 
+    [ "uint32_t", "cmdtype"],
+    [ "uint32_t", "cpusize"]
+  ]
+}
+]}

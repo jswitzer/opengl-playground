@@ -1,0 +1,34 @@
+{"structs":[{
+  "shortname": "bmph",
+  "longname": "bmp_header",
+  "fields": [ 
+    [ "uint16_t", "magic"],
+    [ "uint32_t", "size"],
+    [ "uint16_t", "reserved1"],
+    [ "uint16_t", "reserved2"],
+    [ "uint32_t", "offset"]
+  ]
+},
+{
+  "shortname": "bmphc",
+  "longname": "bmp_header_core",
+  "fields": [ 
+    [ "uint32_t", "header_size"],
+    [ "uint32_t", "width"],
+    [ "uint32_t", "height"],
+    [ "uint16_t", "nplanes"],
+    [ "uint16_t", "bits"],
+    [ "uint32_t", "compression"],
+    [ "uint32_t", "size"],
+    [ "uint32_t", "resh"],
+    [ "uint32_t", "resv"],
+    [ "uint32_t", "ncolors"],
+    [ "uint32_t", "nicolors"],
+    [ "uint32_t", "rbitmask"],
+    [ "uint32_t", "gbitmask"],
+    [ "uint32_t", "bbitmask"],
+    [ "uint32_t", "abitmask"]
+  ],
+  "force_be": ["rbitmask", "gbitmask", "bbitmask", "abitmask"]
+}
+]}

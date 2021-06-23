@@ -1,0 +1,1 @@
+gcc -DGLEW_STATIC -o glfwtest test.c ./glfw/src/libglfw3.a glew/lib/libGLEW.a glmc/libglmc.a -I ./glmc/incs/ -I ./glfw/include -I ./glew/include -framework Cocoa -framework IOKit -framework CoreVideo -framework OpenGL
