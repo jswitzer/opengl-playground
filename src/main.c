@@ -1,171 +1,122 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3.h>
 //#include <glmc.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <stdlib.h>
 #include <time.h>
-#include "stb_image.h"
+#include <pthread.h>
+#include <assert.h>
+//#include "stb_image.h"
+#include "render.h"
+#include "log.h"
 
-const char* vertexSource =
-"#version 150\n\
-in vec2 position;\n\
-in vec3 vertexColor;\n\
-out vec3 VertexColor;\n\
-void main()\n\
-{\n\
-    VertexColor = vertexColor;\n\
-    gl_Position = vec4(position, 0.0, 1.0);\n\
-}\n";
 
-//uniform vec3 triangleColor;\n
-const char* fragmentSource = "#version 150\n\
-in vec3 VertexColor;\n\
-out vec4 outColor;\n\
-void main()\n\
-{\n\
-    outColor = vec4(VertexColor, 1.0);\n\
-}\n";
+char g_running = 1;
 
-float vertices[] = {
-    0.0f,  1.0f, 1.0f, 0.0f, 0.0f, // Vertex 1 (X, Y)
-    1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // Vertex 2 (X, Y)
-    -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // Vertex 3 (X, Y)
-    0.0f, -0.5f, 0.0f, 0.0f, 1.0f // Vertex 4 (X, Y)
-};
+// Event loop 
+pthread_t g_console_tid;     // thread id of console reader
+int       g_console_pipe[2]; // wake pipe for IPC to event loop
 
-GLuint elements[] = {
-    0, 1, 2,
-    1, 3, 2
-};
+// The function that'll get passed each line of input
+void my_rlhandler(char* line);
+
+void my_rlhandler(char* line){
+  if(line==NULL){
+        // Ctrl-D will allow us to exit nicely
+    printf("\nNULLBURGER\n");
+    g_running = 0;
+  }else{
+    if(*line!=0){
+          // If line wasn't empty, store it so that uparrow retrieves it
+      add_history(line);
+    }
+    printf("Your input was:\n%s\n", line);
+    free(line);
+  }
+}
+
+static void *console_thread(void * arg)  {
+    struct timeval tv;
+    int retval;
+    fd_set rfds;
+    const char *prompt = "WOOP> ";
+    rl_callback_handler_install(prompt, (rl_vcpfunc_t*) &my_rlhandler);
+    while (g_running) {
+
+        FD_ZERO(&rfds);
+        FD_SET(0, &rfds);
+        FD_SET(g_console_pipe[0], &rfds);
+
+        /* Wait up to five seconds. */
+
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+
+        retval = select(1, &rfds, NULL, NULL, &tv);
+
+        if (retval == -1) {
+            //log_error("select()");
+        } else if (retval) {
+            if (FD_ISSET(g_console_pipe[0], &rfds)) {
+                char ignore;
+                read(g_console_pipe[0], (void*)&ignore, 1);
+                // Something else has run the bell, probably we exit now
+            }
+            if (FD_ISSET(0, &rfds)) {
+                rl_callback_read_char();
+            }
+        } else {
+            log_debug("No data within five seconds.\n");
+        }
+    }
+    rl_callback_handler_remove();
+    return NULL;
+}
+
+
+int poll_stdin() {
+  return 0;
+}
+
+int console_setup() {
+    pipe(g_console_pipe);
+    int err;
+    err = pthread_create(&g_console_tid, NULL, &console_thread, NULL);
+    if (err != 0) log_error("Couldn't start input handling thread");
+    return 0;
+}
+
+int console_teardown() {
+    //int rc = pthread_kill(g_console_thread_id, SIGUSR1);
+    //printf("GOT RC %d from pthread_kill\n", rc);
+    // Poke the thread
+    char ignore = 'b';
+    write(g_console_pipe[1], (void*)&ignore, 1);
+    assert(g_running == 0);
+    void * res;
+    int err = pthread_join(g_console_tid, &res);
+    if (err != 0) log_error("Couldn't Join input handling thread");
+    return 0;
+}
 
 int main() {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL", NULL, NULL); // Windowed
-//GLFWwindow* window = //    glfwCreateWindow(800, 600, "OpenGL", glfwGetPrimaryMonitor(), nullptr); // Fullscreen
-    glfwMakeContextCurrent(window);
-    GLint uniColor;
+    log_info("Starting program\n");
+
+    console_setup();
+    render_configure();
+    render_initialize();
+
+    render_ctriangle();
+
+    while(!render_should_close() && g_running)
     {
-        glewExperimental = GL_TRUE;
-        glewInit();
-
-        GLuint vao;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
-        GLuint vbo;
-        glGenBuffers(1, &vbo); // Generate 1 buffer
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        GLuint ebo; 
-        glGenBuffers(1, &ebo),
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
-        
-        GLint status;
-        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        printf("compiling source %s", vertexSource);
-        glShaderSource(vertexShader, 1, &vertexSource, NULL);
-        printf("source OK\n");
-        glCompileShader(vertexShader);
-        printf("comp OK\n");
-
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-        if (status == GL_TRUE) {
-            printf("vertex shader OK\n");
-        } else {
-            printf("vertex shader BAD\n");
-         char buffer[512];
-         glGetShaderInfoLog(vertexShader, 512, NULL, buffer); 
-         printf ("vertex shader compilation error: %s", buffer);
-        }
-
-        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-        glCompileShader(fragmentShader);
-
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-        if (status == GL_TRUE) {
-            printf("fragment shader OK");
-        } else {
-         char buffer[512];
-         glGetShaderInfoLog(fragmentShader, 512, NULL, buffer); 
-         printf ("fragment shader compilation error: %s", buffer);
-        }
-
-        GLuint shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glBindFragDataLocation(shaderProgram, 0, "outColor");
-        glLinkProgram(shaderProgram);
-        glUseProgram(shaderProgram);
-
-        GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-        glEnableVertexAttribArray(posAttrib);
-        glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
-
-        GLint colAttrib = glGetAttribLocation(shaderProgram, "vertexColor");
-        glEnableVertexAttribArray(colAttrib);
-        glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
-
-
-        GLuint tex;
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-// load and generate the texture
-        int width, height, nrChannels;
-        unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else
-        {
-           printf("Failed to load texture");
-        }
-        stbi_image_free(data);
-        //uint16_t width;
-        //uint16_t height;
-        //void * pixeldata;
-        //pixeldata = load_rgba();
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels); 
-        //free(pixeldata)
-        //uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
+        render_loop();
     }
+    render_terminate();
+    g_running = 0;
+    console_teardown();
 
-
-    while(!glfwWindowShouldClose(window))
-    {
-        float redness = (float)(time(NULL) % 5) /5.0f;
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        //glUniform3f(uniColor, redness, 1.0f, 1.0f);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-
-    /*glDeleteProgram(shaderProgram);
-    glDeleteShader(fragmentShader);
-    glDeleteShader(vertexShader);
-
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao); */
-
-    glfwTerminate();
 }
