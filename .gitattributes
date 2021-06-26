@@ -1,0 +1,14 @@
+# Set the default behaviour to using auto (overrides core.autocrlf)
+* text=auto
+
+# Always convert these file types to native line endings on checkout
+*.c text
+*.h text
+
+# Always check these file types out as crlf
+*.sln text eol=crlf
+
+# These file types are binary and should never be modified
+*.png binary
+*.jpg binary
+*.tgz binary
