@@ -1,9 +1,9 @@
-glew/
-glfw/
-glmc/
-soil/
-readline/
-lib/
+/glew/
+/glfw/
+/glmc/
+/soil/
+/readline/
+/lib/
 .*.swp
-src/*.o
-src/game
+/src/*.o
+/src/game

@@ -16,9 +16,10 @@ function do_diff() {
   store=$2
   tarfile=$(getinfo $mod "tarfile")
   unpacks_as=$(getinfo $mod "unpacks_as")
+  move_to=$(getinfo $mod "move_to")
   patch_list=$(getinfo $mod "patch_list")
   patched_files=$(getinfo $mod "patched_files")
-  if [ -d $unpacks_as ]; then
+  if [ ! -d $unpacks_as ]; then
     tar -xzf $tarfile
   fi
   if [ "$store" = "store" ]; then
@@ -27,7 +28,7 @@ function do_diff() {
     while read p; do
       echo "storing changed file $p"
       mkdir -p $patched_files/$(dirname $p)
-      cp -f $p patched_files/$(dirname $p)
+      cp -f $p $patched_files/$(dirname $p)
     done <$patch_list
   else 
     git diff --no-index --name-only $unpacks_as $move_to 
@@ -62,6 +63,7 @@ function do_unpack() {
     fi
     echo "Using Tar"
     tar -xzf $tarfile
+    mv $unpacks_as $move_to
     if [ -e $patch_list ]; then
       while read p; do
         echo "$patching $p"
@@ -88,6 +90,3 @@ else
   echo "Alt Usage: dep clean <module_name>"
   echo "Alt Usage: dep clean all"
 fi
-
-version=$(arrayGet "bob" "test")
-echo $version
