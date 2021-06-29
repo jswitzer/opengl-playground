@@ -10,14 +10,63 @@
 # dep diff <name>
 # Looks at the currently unpacked directory and creates a diff 
 
+$glew_version = '2.1.0'
+$glfw_version='3.2.1'
+$lua_version='0.1.1'
+$soil_version='0.1.1'
+$tcc_version='0.9.27'
+$wineditline_version='2.206'
+
+$all = @('glew', 'glfw', 'lua', 'soil', 'tcc', 'wineditline')
+
 $deps = @{
   glew = @{
-    version = '2.1.0'
-    tarfile = 'depsrc/glew-2.1.0.tgz'
-    unpacks_as = 'glew-2.1.0'
-    patch_list = 'depsrc/glew-2.1.0.patch.list'
-    patched_files = 'depsrc/glew-2.1.0.patch.files'
-    move_to = 'glew'
+    version = "$glew_version"
+    tarfile = "depsrc/glew-$glew_version.tar.gz"
+    unpacks_as = "glew-$glew_version"
+    patch_list = "depsrc/glew-$glew_version.patch.list"
+    patched_files = "depsrc/glew-$glew_version.patch.files"
+    move_to = "glew"
+  }
+  glfw = @{
+    version = "$glfw_version"
+    tarfile = "depsrc/glfw-$glfw_version.tar.gz"
+    unpacks_as = "glfw-$glfw_version"
+    patch_list = "depsrc/glfw-$glfw_version.patch.list"
+    patched_files = "depsrc/glfw-$glfw_version.patch.files"
+    move_to = "glfw"
+  }
+  lua = @{
+    version = "$lua_version"
+    tarfile = "depsrc/lua-$lua_version.tar.gz"
+    unpacks_as = "lua-$lua_version"
+    patch_list = "depsrc/lua-$lua_version.patch.list"
+    patched_files = "depsrc/lua-$lua_version.patch.files"
+    move_to = "lua"
+  }
+  soil = @{
+    version = "$soil_version"
+    tarfile = "depsrc/soil-$soil_version.tar.gz"
+    unpacks_as = "soil-$soil_version"
+    patch_list = "depsrc/soil-$soil_version.patch.list"
+    patched_files = "depsrc/soil-$soil_version.patch.files"
+    move_to = "soil"
+  }
+  tcc = @{
+    version = "$tcc_version"
+    tarfile = "depsrc/tcc-$tcc_version.tar.gz"
+    unpacks_as = "tcc-$tcc_version"
+    patch_list = "depsrc/tcc-$tcc_version.patch.list"
+    patched_files = "depsrc/tcc-$tcc_version.patch.files"
+    move_to = "tcc"
+  }
+  wineditline = @{
+    version = "$wineditline_version"
+    tarfile = "depsrc/wineditline-$wineditline_version.tar.gz"
+    unpacks_as = "wineditline-$wineditline_version"
+    patch_list = "depsrc/wineditline-$wineditline_version.patch.list"
+    patched_files = "depsrc/wineditline-$wineditline_version.patch.files"
+    move_to = "wineditline"
   }
 }
 
@@ -91,6 +140,10 @@ function unpack($mod) {
   }
 }
 
+function unpack_all() {
+  
+}
+
 $command=$args[0]
 $mod=$args[1]
 
@@ -101,9 +154,17 @@ if ($command -eq "diff" ) {
   }
   do_diff $mod $store
 } elseif ($command -eq "clean") {
-  clean $mod
+  if ($mod -eq "all") {
+    clean_all
+  } else {
+    clean $mod
+  }
 } elseif ($command -eq "unpack") {
-  unpack $mod
+  if ($mod -eq "all") {
+    unpack_all
+  } else {
+    unpack $mod
+  }
 } else {
   write "Usage:     dep unpack <module_name>"
   write "Alt Usage: dep diff <module_name> print"
