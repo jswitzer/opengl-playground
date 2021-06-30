@@ -3,7 +3,10 @@
 /glmc/
 /soil/
 /readline/
+/lua/
+/tcc/
 /lib/
 .*.swp
 /src/*.o
 /src/game
+.DS_Store

@@ -1,13 +1,69 @@
 /*
- * Simple Test program for libtcc
- *
- * libtcc can be useful to use tcc as a "backend" for a code generator.
+ * quick compile of modules or extending using lua
  */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "libtcc.h"
+
+
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+
+// Here is the same function from the previous example
+int multiplication(lua_State *L) {
+    int a = luaL_checkinteger(L, 1);
+    int b = luaL_checkinteger(L, 2);
+    lua_Integer c = a * b;
+    lua_pushinteger(L, c);
+    return 1;
+}
+
+// See https://lucasklassmann.com/blog/2019-02-02-how-to-embeddeding-lua-in-c/
+int module_luatest() {
+
+    lua_State *L = luaL_newstate();
+    luaL_openlibs(L);
+
+    // First, we need to define an array with
+    // all functions that will be available inside our namespace 
+    const struct luaL_Reg MyMathLib[] = {
+        { "mul", multiplication }
+    };
+
+    // We create a new table
+    lua_newtable(L);
+
+    // Here we set all functions from MyMathLib array into
+    // the table on the top of the stack
+    luaL_setfuncs(L, &MyMathLib, 0);
+
+    // We get the table and set as global variable
+    lua_setglobal(L, "MyMath");
+
+    // Now we can call from Lua using the namespace MyMath
+    char * code = "print(MyMath.mul(7, 8))";
+
+    if (luaL_dostring(L, code) == LUA_OK) {
+        lua_pop(L, lua_gettop(L));
+    }
+
+    lua_close(L);
+    return 0;
+}
+
+
+static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
+    (void)ud;  (void)osize;  /* not used */
+    if (nsize == 0) {
+        free(ptr);
+        return NULL;
+    } else {
+        return realloc(ptr, nsize);
+    }
+}
 
 /* this function is called by the generated code */
 int add(int a, int b)
@@ -82,5 +138,6 @@ int module_test()
     /* delete the state */
     tcc_delete(s);
 
+	module_luatest();
     return 0;
 }

@@ -3,7 +3,14 @@ INSTALLED_READLINE_HEADERS = readline.h chardefs.h keymaps.h history.h tilde.h \
 src/game: lib
 	make -C src
 
-lib: lib/libGLEW.a lib/libglfw3.a lib/libreadline.a lib/libSOIL.a
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    LUA_PLATFORM := macosx
+else
+    LUA_PLATFORM := linux
+endif
+
+lib: lib/libGLEW.a lib/libglfw3.a lib/libreadline.a lib/libSOIL.a lib/liblua.a lib/libtcc.a
 
 lib/libglfw3.a: glfw
 	mkdir -p lib
@@ -46,6 +53,13 @@ lib/libtcc.a: tcc
 	cp tcc/tcclib.h tcc/child_include/
 	cp tcc/libtcc1.a tcc/child_lib/
 	cp tcc/libtcc.a lib/
+
+lib/liblua.a: lua
+	mkdir -p lib
+	cd lua && make $(LUA_PLATFORM)
+	mkdir -p lua/include
+	cp -f lua/src/lua.h lua/src/lualib.h lua/src/luaconf.h lua/src/lauxlib.h lua/include/
+	cp -f lua/src/liblua.a lib/
 
 tcc:
 	./dep.sh unpack tcc
