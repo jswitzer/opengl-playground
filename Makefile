@@ -35,8 +35,21 @@ clean:
 	rm -rf tcc lua glfw glew readline lib soil
 	make -C src clean
 
+lib/libtcc.a: tcc
+	mkdir -p lib
+	make -C tcc
+	mkdir -p tcc/child_lib tcc/child_include tcc/parent_include
+	# Everything is here, but a bit confusingly organized. move things to be 
+	# A bit more explicit
+	cp tcc/libtcc.h tcc/parent_include/
+	cp tcc/include/* tcc/child_include/
+	cp tcc/tcclib.h tcc/child_include/
+	cp tcc/libtcc1.a tcc/child_lib/
+	cp tcc/libtcc.a lib/
+
 tcc:
 	./dep.sh unpack tcc
+	cd tcc && ./configure
 lua:
 	./dep.sh unpack lua
 glfw:

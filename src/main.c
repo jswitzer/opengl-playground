@@ -12,7 +12,7 @@
 //#include "stb_image.h"
 #include "render.h"
 #include "log.h"
-
+#include "module.h"
 
 char g_running = 1;
 
@@ -33,7 +33,12 @@ void my_rlhandler(char* line){
           // If line wasn't empty, store it so that uparrow retrieves it
       add_history(line);
     }
-    printf("Your input was:\n%s\n", line);
+    if (!strcmp(line, "testmodule")) { 
+      module_test();
+    } else {
+      printf("Your input was:\n%s\n", line);
+    }
+
     free(line);
   }
 }
