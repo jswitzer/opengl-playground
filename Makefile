@@ -17,10 +17,10 @@ lib/libGLEW.a: glew
 
 lib/libSOIL.a: soil
 	mkdir -p lib
+	make -C soil libSOIL.a
+	cp -f soil/build/lib/libSOIL.a lib/
 	# Should move this into soil makefile:
-	mkdir -p soil/lib soil/obj
-	make -C soil
-	cp -f soil/lib/libSOIL.a lib/
+	#mkdir -p soil/lib soil/obj
 
 lib/libreadline.a: readline
 	mkdir -p lib
@@ -36,18 +36,17 @@ clean:
 	make -C src clean
 
 tcc:
-	tar -xjf depsrc/tcc-0.9.27.tar.bz2
+	./dep.sh unpack tcc
 lua:
-	tar -xjf depsrc/lua-5.3.4.tar.bz2
+	./dep.sh unpack lua
 glfw:
-	tar -xjf depsrc/glfw-3.2.1.tar.bz2
-	./depsrc/glfw-3.2.1.patch/patch.sh ./glfw
+	./dep.sh unpack glfw
 glew:
-	tar -xjf depsrc/glew-2.1.0.tar.bz2
+	./dep.sh unpack glew
 readline:
-	tar -xjf depsrc/readline-8.0.tar.bz2
+	./dep.sh unpack readline
 	cd readline && ./configure
 soil:
-	tar -xjf depsrc/soil-0.0.2.tar.bz2
-
+	./dep.sh unpack soil
+	cd soil && ./configure
 

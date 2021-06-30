@@ -96,7 +96,7 @@ function do_unpack() {
   echo "Unpacking $mod version $version .. " 
   if [ ! -d $move_to ]; then
     if [ -d $unpacks_as ]; then
-      rm -r $unpacks_as
+      rm -rf $unpacks_as
     fi
     echo "Using Tar"
     tar -xzf $tarfile
