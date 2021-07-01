@@ -234,15 +234,14 @@ function build_wineditline() {
 }
 
 function build_lua() {
-  cd lua
-  #cmake .
-  #msbuild ./src/edit_static.vcxproj /property:Configuration=Release
-  #cd ..
-  #$source_lib = "./wineditline/src/Release/edit_static.lib"
-  #$target_lib = "./lib/edit_static.lib"
-  #New-Item -Force -Path $target_lib -ItemType "file"
-  #Copy-Item -Force $source_lib $target_lib
-  cd ..
+  cd lua/src
+  cmake .
+  msbuild ./liblua.vcxproj /property:Configuration=Release
+  cd ../..
+  $source_lib = "./lua/src/Release/liblua.lib"
+  $target_lib = "./lib/liblua.lib"
+  New-Item -Force -Path $target_lib -ItemType "file"
+  Copy-Item -Force $source_lib $target_lib
 }
 
 function do_build($mod) {
