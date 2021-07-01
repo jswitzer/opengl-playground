@@ -12,7 +12,7 @@
 
 $glew_version = '2.1.0'
 $glfw_version='3.2.1'
-$lua_version='0.1.1'
+$lua_version='5.3.6'
 $soil_version='0.1.1'
 $tcc_version='0.9.27'
 $wineditline_version='2.206'
@@ -85,10 +85,11 @@ function do_diff($mod, $store) {
 
   if ( $store -eq "True" ) {
     write "Writing output to $patch_list"
-    git diff --no-index --name-only $unpacks_as $move_to *> $patch_list
+    git diff --no-index --name-only $unpacks_as $move_to > $patch_list
+    #git diff --no-index --name-only $unpacks_as $move_to *> $patch_list
     foreach($file in Get-Content $patch_list) {
       write "storing changed file $file"
-      New-Item -Force -Path $patched_files/$file
+      New-Item -Force -Path $patched_files/$file -ItemType "file"
       Copy-Item -Force $file $patched_files/$file
     }
   } else {
@@ -101,11 +102,11 @@ function clean($mod) {
   $unpacks_as = $deps[$mod].unpacks_as
   $t = Test-Path -Path $move_to
   if ($t) {
-    rm -r $move_to
+    rm -r -force $move_to
   }
   $t = Test-Path -Path $unpacks_as
   if ($t) {
-    rm -r $unpacks_as
+    rm -r -force $unpacks_as
   }
 }
 
@@ -121,17 +122,23 @@ function unpack($mod) {
   if ( -not $t) {
     $t = Test-Path -Path $unpacks_as
     if ($t) {
-      rm -r $unpacks_as
+      rm -r -force $unpacks_as
     }
     write "Using Tar"
     tar -xzf $tarfile
+    try {
     mv $unpacks_as $move_to
+    } catch {
+      write "Error, waiting then retrying"
+      Start-Sleep -Seconds 2
+      mv $unpacks_as $move_to
+    }
     $t = Test-Path -Path $patch_list
 
     if ( $t) {
       foreach($file in Get-Content $patch_list) {
         write "patching $file"
-        New-Item -Force -Path ./$file
+        New-Item -Force -Path ./$file -ItemType "file"
         Copy-Item -Force $patched_files/$file ./$file
       }
     }
@@ -141,11 +148,136 @@ function unpack($mod) {
 }
 
 function unpack_all() {
-  
+  foreach($mod in $all) {
+    unpack $mod
+  }
 }
+
+function clean_all() {
+  foreach($mod in $all) {
+    clean $mod
+  }
+}
+
 
 $command=$args[0]
 $mod=$args[1]
+
+
+function Invoke-Environment {
+    param
+    (
+        # Any cmd shell command, normally a configuration batch file.
+        [Parameter(Mandatory=$true)]
+        [string] $Command
+    )
+
+    $Command = "`"" + $Command + "`""
+    cmd /c "$Command > nul 2>&1 && set" | . { process {
+        if ($_ -match '^([^=]+)=(.*)') {
+            [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2])
+        }
+    }}
+
+}
+
+function build_glfw() {
+  cd glfw
+  cmake .
+  msbuild ./src/glfw.vcxproj /property:Configuration=Release
+  cd ..
+  $source_lib = "./glfw/src/Release/glfw3.lib"
+  $target_lib = "./lib/glfw3.lib"
+  New-Item -Force -Path $target_lib -ItemType "file"
+  Copy-Item -Force $source_lib $target_lib
+}
+
+function build_glew() {
+  cd glew
+  cmake build/cmake 
+  msbuild ./glew_s.vcxproj /property:Configuration=Release
+  cd ..
+  $source_lib = "./glew/lib/Release/libglew32.lib"
+  $target_lib = "./lib/libglew32.lib"
+  New-Item -Force -Path $target_lib -ItemType "file"
+  Copy-Item -Force $source_lib $target_lib
+}
+
+function build_soil() {
+  cd soil
+  cmake .
+  msbuild ./soil_s.vcxproj /property:Configuration=Release
+  cd ..
+  $source_lib = "./soil/Release/libSOIL.lib"
+  $target_lib = "./lib/libSOIL.lib"
+  New-Item -Force -Path $target_lib -ItemType "file"
+  Copy-Item -Force $source_lib $target_lib
+
+}
+
+function build_tcc() {
+  cd tcc/win32
+  .\build-tcc.bat -c cl -t 32
+  cd ../..
+  # TODO: Copy these libraries somewhere useful
+}
+
+function build_wineditline() {
+  cd wineditline
+  cmake .
+  msbuild ./src/edit_static.vcxproj /property:Configuration=Release
+  cd ..
+  $source_lib = "./wineditline/src/Release/edit_static.lib"
+  $target_lib = "./lib/edit_static.lib"
+  New-Item -Force -Path $target_lib -ItemType "file"
+  Copy-Item -Force $source_lib $target_lib
+}
+
+function build_lua() {
+  cd lua
+  #cmake .
+  #msbuild ./src/edit_static.vcxproj /property:Configuration=Release
+  #cd ..
+  #$source_lib = "./wineditline/src/Release/edit_static.lib"
+  #$target_lib = "./lib/edit_static.lib"
+  #New-Item -Force -Path $target_lib -ItemType "file"
+  #Copy-Item -Force $source_lib $target_lib
+  cd ..
+}
+
+function do_build($mod) {
+  unpack $mod
+  if ("$mod" -eq "glfw") {
+    build_glfw
+  }
+  if ("$mod" -eq "glew") {
+    build_glew
+  }
+  if ("$mod" -eq "soil") {
+    build_soil
+  }
+  if ("$mod" -eq "wineditline") {
+    build_wineditline
+  }
+  if ("$mod" -eq "tcc") {
+    build_tcc
+  }
+  if ("$mod" -eq "lua") {
+    build_lua
+  }
+}
+
+function build_all() {
+  foreach($mod in $all) {
+    do_build $mod
+  }
+}
+
+function vsvars32() {
+  Invoke-Environment $env:VS110COMNTOOLS\vsvars32.bat
+}
+
+
 
 if ($command -eq "diff" ) {
   $store = $false
@@ -159,6 +291,14 @@ if ($command -eq "diff" ) {
   } else {
     clean $mod
   }
+} elseif ($command -eq "build") {
+  vsvars32
+  if ($mod -eq "all") {
+    build_all
+  } else {
+    do_build $mod
+  }
+
 } elseif ($command -eq "unpack") {
   if ($mod -eq "all") {
     unpack_all
@@ -172,5 +312,4 @@ if ($command -eq "diff" ) {
   write "Alt Usage: dep clean <module_name>"
   write "Alt Usage: dep clean all"
 }
-
 
