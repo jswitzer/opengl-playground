@@ -68,11 +68,12 @@ int render_initialize() {
 
 int render_mkshader(const char * source, GLenum type, GLuint *result) {
     char * type_name;
-    if (type == GL_VERTEX_SHADER) type_name = "vertex";
-    if (type == GL_FRAGMENT_SHADER) type_name = "fragment";
+	GLint status;
+	GLuint shader;
+	if (type == GL_VERTEX_SHADER) {type_name = "vertex";}
+	if (type == GL_FRAGMENT_SHADER) {type_name = "fragment";}
 
-    GLint status;
-    GLuint shader = glCreateShader(type);
+    shader = glCreateShader(type);
     log_debug("compiling source %s", source);
     glShaderSource(shader, 1, &source, NULL);
     log_debug("source OK\n");
@@ -85,8 +86,8 @@ int render_mkshader(const char * source, GLenum type, GLuint *result) {
         *result = shader;
         return 0;
     } else {
-        log_error("%s shader BAD\n", type_name);
         char buffer[512];
+		log_error("%s shader BAD\n", type_name);
         glGetShaderInfoLog(shader, 512, NULL, buffer); 
         log_error("%s shader compilation error: %s", type_name, buffer);
         return RENDER_ERR_BADSHADER;
@@ -152,47 +153,52 @@ int render_ctriangle() {
     };
 
 
-    GLuint vao;
+    GLuint vao, vbo, ebo;
+    GLuint vertexShader, fragmentShader;
+	GLuint shaderProgram;
+	GLuint tex;
+	GLint posAttrib, colAttrib;
+	float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint vbo;
     glGenBuffers(1, &vbo); // Generate 1 buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    GLuint ebo; 
+ 
     glGenBuffers(1, &ebo),
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
-    GLuint vertexShader, fragmentShader;
+
     err = render_mkshader(vertexSource, GL_VERTEX_SHADER, &vertexShader);
     if (err) return err;
     err = render_mkshader(fragmentSource, GL_FRAGMENT_SHADER, &fragmentShader);
     if (err) return err;
 
-    GLuint shaderProgram = glCreateProgram();
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glBindFragDataLocation(shaderProgram, 0, "outColor");
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
 
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+
+    posAttrib = glGetAttribLocation(shaderProgram, "position");
     glEnableVertexAttribArray(posAttrib);
     glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
 
-    GLint colAttrib = glGetAttribLocation(shaderProgram, "vertexColor");
+    colAttrib = glGetAttribLocation(shaderProgram, "vertexColor");
     glEnableVertexAttribArray(colAttrib);
     glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
 
-    GLuint tex;
+
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+    
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);

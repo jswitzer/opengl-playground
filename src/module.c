@@ -24,8 +24,8 @@ int multiplication(lua_State *L) {
 // See https://lucasklassmann.com/blog/2019-02-02-how-to-embeddeding-lua-in-c/
 int module_luatest() {
 
-    lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
+    lua_State *L;
+    char * code = "print(MyMath.mul(7, 8))";
 
     // First, we need to define an array with
     // all functions that will be available inside our namespace 
@@ -33,18 +33,20 @@ int module_luatest() {
         { "mul", multiplication }
     };
 
+	L = luaL_newstate();
+    luaL_openlibs(L);
+
     // We create a new table
     lua_newtable(L);
 
     // Here we set all functions from MyMathLib array into
     // the table on the top of the stack
-    luaL_setfuncs(L, &MyMathLib, 0);
+    luaL_setfuncs(L, &MyMathLib[0], 0);
 
     // We get the table and set as global variable
     lua_setglobal(L, "MyMath");
 
     // Now we can call from Lua using the namespace MyMath
-    char * code = "print(MyMath.mul(7, 8))";
 
     if (luaL_dostring(L, code) == LUA_OK) {
         lua_pop(L, lua_gettop(L));

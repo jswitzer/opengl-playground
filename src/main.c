@@ -1,13 +1,18 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 //#include <glmc.h>
-#include <unistd.h>
-#include <stdio.h>
+//#include <unistd.h>
+#ifdef WIN32
+#include <editline/readline.h>
+#else
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <pthread.h>
+#endif
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <pthread.h>
+
 #include <assert.h>
 //#include "stb_image.h"
 #include "render.h"
@@ -16,9 +21,14 @@
 
 char g_running = 1;
 
+#ifdef WIN32
+   DWORD g_console_tid;
+   HANDLE g_console_threadhandle;
+#else
 // Event loop 
 pthread_t g_console_tid;     // thread id of console reader
 int       g_console_pipe[2]; // wake pipe for IPC to event loop
+#endif
 
 // The function that'll get passed each line of input
 void my_rlhandler(char* line);
@@ -42,13 +52,21 @@ void my_rlhandler(char* line){
     free(line);
   }
 }
-
+const char * promptstr="WOOP>";
+#ifdef WIN32
+DWORD WINAPI console_thread(LPVOID Param){
+	char *line;
+	while ((line = readline(promptstr))
+    && g_running) {
+		my_rlhandler(line);
+  }
+}
+#else
 static void *console_thread(void * arg)  {
     struct timeval tv;
     int retval;
     fd_set rfds;
-    const char *prompt = "WOOP> ";
-    rl_callback_handler_install(prompt, (rl_vcpfunc_t*) &my_rlhandler);
+    rl_callback_handler_install(promptstr, (rl_vcpfunc_t*) &my_rlhandler);
     while (g_running) {
 
         FD_ZERO(&rfds);
@@ -80,6 +98,7 @@ static void *console_thread(void * arg)  {
     rl_callback_handler_remove();
     return NULL;
 }
+#endif
 
 
 int poll_stdin() {
@@ -87,23 +106,40 @@ int poll_stdin() {
 }
 
 int console_setup() {
+#ifdef WIN32
+   int Param = 0;
+   /* create the thread */
+   g_console_threadhandle = CreateThread( NULL, /* default security attributes */ 0, /* default stack size */    
+   console_thread, /* thread function */ &Param, /* parameter to thread function */ 0, /* default creation    flags */ &g_console_tid);
+   /* returns the thread identifier */
+   return 0;
+#else
     pipe(g_console_pipe);
     int err;
     err = pthread_create(&g_console_tid, NULL, &console_thread, NULL);
     if (err != 0) log_error("Couldn't start input handling thread");
     return 0;
+#endif
 }
 
 int console_teardown() {
     //int rc = pthread_kill(g_console_thread_id, SIGUSR1);
     //printf("GOT RC %d from pthread_kill\n", rc);
     // Poke the thread
+#ifdef WIN32
+    if (g_console_threadhandle != NULL){
+      /* now wait for the thread to finish */ WaitForSingleObject(g_console_threadhandle,INFINITE);
+      /* close the thread handle */
+      CloseHandle(g_console_threadhandle);
+   }
+#else
     char ignore = 'b';
     write(g_console_pipe[1], (void*)&ignore, 1);
     assert(g_running == 0);
     void * res;
     int err = pthread_join(g_console_tid, &res);
     if (err != 0) log_error("Couldn't Join input handling thread");
+#endif
     return 0;
 }
 

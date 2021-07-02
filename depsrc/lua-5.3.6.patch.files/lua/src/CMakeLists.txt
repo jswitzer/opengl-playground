@@ -64,6 +64,7 @@ set(LIBS
 	lstrlib.c 
 	ltablib.c 
 	loadlib.c 
+	lutf8lib.c 
 	linit.c)
 source_group(core_h FILES ${CORE_H})
 source_group(core_c FILES ${CORE_C})

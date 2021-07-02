@@ -219,7 +219,19 @@ function build_tcc() {
   cd tcc/win32
   .\build-tcc.bat -c cl -t 32
   cd ../..
-  # TODO: Copy these libraries somewhere useful
+  $source_lib = "./tcc/win32/libtcc.lib"
+  $target_lib = "./lib/libtcc.lib"
+  New-Item -Force -Path $target_lib -ItemType "file"
+  Copy-Item -Force $source_lib $target_lib
+  cp -Force "./tcc/win32/libtcc.dll" "./lib/libtcc.dll"
+  New-Item -Force -Path "./tcc/child_lib" -ItemType "directory"
+  New-Item -Force -Path "./tcc/child_include" -ItemType "directory"
+  New-Item -Force -Path "./tcc/parent_include" -ItemType "directory"
+  cp "./tcc/win32/lib/libtcc1-32.a" "./tcc/child_lib/"
+  cp "./tcc/include/*.h" "./tcc/child_include/"
+  cp "./tcc/tcclib.h" "./tcc/child_include/"
+  cp "./tcc/libtcc.h" "./tcc/parent_include/"
+
 }
 
 function build_wineditline() {
@@ -242,6 +254,12 @@ function build_lua() {
   $target_lib = "./lib/liblua.lib"
   New-Item -Force -Path $target_lib -ItemType "file"
   Copy-Item -Force $source_lib $target_lib
+  New-Item -Force -Path "./lua/include" -ItemType "directory"
+
+  $headers = @('lualib.h', 'luaconf.h', 'lua.h', 'lauxlib.h')
+  foreach ($header in $headers) {
+    Copy-Item -Force "./lua/src/$header" "./lua/include/$header"
+  }
 }
 
 function do_build($mod) {
@@ -304,11 +322,14 @@ if ($command -eq "diff" ) {
   } else {
     unpack $mod
   }
+} elseif ($command -eq "vsvars32") {
+  vsvars32
 } else {
   write "Usage:     dep unpack <module_name>"
   write "Alt Usage: dep diff <module_name> print"
   write "Alt Usage: dep diff <module_name> store"
   write "Alt Usage: dep clean <module_name>"
   write "Alt Usage: dep clean all"
+  write "Alt Usage: dep vsvars32"
 }
 
