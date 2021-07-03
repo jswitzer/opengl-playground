@@ -110,8 +110,14 @@ int module_test()
         fprintf(stderr, "Could not create tcc state\n");
         exit(1);
     }
-    tcc_set_lib_path(s, "./../tcc/child_lib");
+#ifdef WIN32
+	    tcc_set_lib_path(s, "./../../tcc/child_lib");
+    tcc_add_include_path(s, "./../../tcc/child_include");
+	tcc_add_library_path(s, "./../../tcc/child_lib");
+#else
+	    tcc_set_lib_path(s, "./../tcc/child_lib");
     tcc_add_include_path(s, "./../tcc/child_include");
+#endif
     //tcc_add_library_path(s, a+2); */
 
     /* MUST BE CALLED before any compilation */

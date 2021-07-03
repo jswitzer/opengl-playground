@@ -128,6 +128,21 @@ int console_teardown() {
     // Poke the thread
 #ifdef WIN32
     if (g_console_threadhandle != NULL){
+
+		    DWORD dwTmp;
+            // Send a keypress to wake up the readline() function
+    INPUT_RECORD ir[2];
+    ir[0].EventType = KEY_EVENT;
+    ir[0].Event.KeyEvent.bKeyDown = TRUE;
+    ir[0].Event.KeyEvent.dwControlKeyState = 0;
+    ir[0].Event.KeyEvent.uChar.UnicodeChar = VK_RETURN;
+    ir[0].Event.KeyEvent.wRepeatCount = 1;
+    ir[0].Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
+    ir[0].Event.KeyEvent.wVirtualScanCode = MapVirtualKey(VK_RETURN, MAPVK_VK_TO_VSC);
+    ir[1] = ir[0];
+    ir[1].Event.KeyEvent.bKeyDown = FALSE;
+    WriteConsoleInput(GetStdHandle(STD_INPUT_HANDLE), ir, 2, &dwTmp);
+
       /* now wait for the thread to finish */ WaitForSingleObject(g_console_threadhandle,INFINITE);
       /* close the thread handle */
       CloseHandle(g_console_threadhandle);
@@ -159,5 +174,7 @@ int main() {
     render_terminate();
     g_running = 0;
     console_teardown();
-
+    printf("Press any key to continue");
+    getchar();
+#endif
 }

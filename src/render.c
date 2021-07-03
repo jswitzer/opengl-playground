@@ -43,7 +43,14 @@ int render_configure() {
     return 0;
 }
 
+void GLFW_error(int error, const char* description)
+{
+    log_error("GLFW Error %d: %s\n", error, description);
+}
+
 int render_initialize() {
+	glfwSetErrorCallback(GLFW_error);
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -60,7 +67,6 @@ int render_initialize() {
         g_window = glfwCreateWindow(g_renderconf.xres, g_renderconf.yres, (const char *)&g_renderconf.windowtitle, NULL, NULL); // Windowed
     }
     glfwMakeContextCurrent(g_window);
-
     glewExperimental = GL_TRUE;
     glewInit();
     return 0;
@@ -112,7 +118,11 @@ int render_terminate() {
 }
 
 int render_should_close() {
-   return glfwWindowShouldClose(g_window);
+    if (!g_window) {
+        log_error("glfw window shut down unexpectedly, exiting render loop");
+        return 1;
+    }
+    return glfwWindowShouldClose(g_window);
 }
 
 
