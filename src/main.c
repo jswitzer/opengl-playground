@@ -1,14 +1,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 //#include <glmc.h>
-//#include <unistd.h>
-#ifdef WIN32
-#include <editline/readline.h>
-#else
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <pthread.h>
-#endif
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -18,6 +11,15 @@
 #include "render.h"
 #include "log.h"
 #include "module.h"
+
+#ifdef WIN32
+#include <editline/readline.h>
+#else
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <pthread.h>
+#endif
+
 
 char g_running = 1;
 
@@ -176,5 +178,4 @@ int main() {
     console_teardown();
     printf("Press any key to continue");
     getchar();
-#endif
 }

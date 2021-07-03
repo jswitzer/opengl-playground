@@ -24,13 +24,17 @@ lib/libGLEW.a: glew
 
 lib/libSOIL.a: soil
 	mkdir -p lib
+	if [ ! -e ./soil/Makefile ]; then \
+		cd soil && ./configure;\
+	fi
 	make -C soil libSOIL.a
 	cp -f soil/build/lib/libSOIL.a lib/
-	# Should move this into soil makefile:
-	#mkdir -p soil/lib soil/obj
 
 lib/libreadline.a: readline
 	mkdir -p lib
+	if [ ! -e ./readline/Makefile ]; then \
+		cd readline && ./configure;\
+	fi
 	make -C readline
 	cp -f readline/libreadline.a lib/
 	mkdir -p readline/include/readline
@@ -44,6 +48,9 @@ clean:
 
 lib/libtcc.a: tcc
 	mkdir -p lib
+	if [ ! -e ./tcc/config.mak ]; then \
+		cd tcc && ./configure;\
+	fi
 	make -C tcc
 	mkdir -p tcc/child_lib tcc/child_include tcc/parent_include
 	# Everything is here, but a bit confusingly organized. move things to be 
@@ -63,7 +70,6 @@ lib/liblua.a: lua
 
 tcc:
 	./dep.sh unpack tcc
-	cd tcc && ./configure
 lua:
 	./dep.sh unpack lua
 glfw:
@@ -72,8 +78,6 @@ glew:
 	./dep.sh unpack glew
 readline:
 	./dep.sh unpack readline
-	cd readline && ./configure
 soil:
 	./dep.sh unpack soil
-	cd soil && ./configure
 

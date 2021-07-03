@@ -103,7 +103,7 @@ function do_unpack() {
     mv $unpacks_as $move_to
     if [ -e $patch_list ]; then
       while read p; do
-        echo "$patching $p"
+        echo "patching $p from $patch_list"
         mkdir -p $(dirname $p)
         cp -f $patched_files/$p ./$p
       done <$patch_list

@@ -4,6 +4,7 @@
 # Always convert these file types to native line endings on checkout
 *.c text
 *.h text
+*.patch.list
 
 # Always check these file types out as crlf
 *.sln text eol=crlf
