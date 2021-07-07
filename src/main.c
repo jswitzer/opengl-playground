@@ -8,6 +8,7 @@
 
 #include <assert.h>
 //#include "stb_image.h"
+#include "config.h"
 #include "render.h"
 #include "log.h"
 #include "module.h"
@@ -160,22 +161,38 @@ int console_teardown() {
     return 0;
 }
 
-int main() {
-    log_info("Starting program\n");
-
-    console_setup();
-    render_configure();
-    render_initialize();
-
-    render_ctriangle();
-
-    while(!render_should_close() && g_running)
-    {
-        render_loop();
+int main(int argc, char * argv[]) {
+    char * arghelp = 0;
+    log_info("Parsing args\n");
+    config_parseargs(argc, argv);
+    if (config_error() != NULL) {
+        printf("Config error: \n  %s \n\n", config_error());
+        config_print_help();
+        return 1;
     }
-    render_terminate();
-    g_running = 0;
+    log_info("Starting program\n");
+    console_setup();
+    if (config_false(config_headless())) {
+        render_configure();
+        render_initialize();
+
+        render_ctriangle();
+
+        while(!render_should_close() && g_running)
+        {
+            render_loop();
+        }
+        render_terminate();
+        g_running = 0;
+    } else {
+        while(g_running)
+        {
+            sleep(1);
+        }
+    }
     console_teardown();
+#ifdef WIN32
     printf("Press any key to continue");
     getchar();
+#endif
 }

@@ -1,6 +1,6 @@
-DEPS = render.h log.h module.h
+DEPS = render.h log.h module.h config.h
 #OBJ = parse.o stb_image.o
-OBJ = render.o log.o module.o
+OBJ = render.o log.o module.o config.o
 TESTOBJ = test.o
 MAINOBJ = main.o
 GLFWLIB = ../lib/libglfw3.a
