@@ -11,6 +11,9 @@ int render_initialize();
 int render_loop();
 int render_terminate();
 int render_should_close();
+
+/* The modes */
 int render_ctriangle();
+int render_look();
 
 #endif

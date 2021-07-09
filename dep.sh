@@ -40,7 +40,15 @@ tcc_patch_list="depsrc/tcc-$tcc_version.patch.list"
 tcc_patched_files="depsrc/tcc-$tcc_version.patch.files"
 tcc_move_to="tcc"
 
-all=( glew glfw lua readline soil tcc )
+cglm_version="0.8.3"
+cglm_tarfile="depsrc/cglm-$cglm_version.tar.gz"
+cglm_unpacks_as="cglm-$cglm_version"
+cglm_patch_list="depsrc/cglm-$cglm_version.patch.list"
+cglm_patched_files="depsrc/cglm-$cglm_version.patch.files"
+cglm_move_to="cglm"
+
+
+all=( glew glfw lua readline soil tcc cglm )
 
 getinfo() { 
   local array=$1 index=$2

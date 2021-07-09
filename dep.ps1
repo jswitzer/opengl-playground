@@ -16,8 +16,9 @@ $lua_version='5.3.6'
 $soil_version='0.1.1'
 $tcc_version='0.9.27'
 $wineditline_version='2.206'
+$cglm_version='0.8.3'
 
-$all = @('glew', 'glfw', 'lua', 'soil', 'tcc', 'wineditline')
+$all = @('glew', 'glfw', 'lua', 'soil', 'tcc', 'wineditline', 'cglm')
 
 $deps = @{
   glew = @{
@@ -67,6 +68,14 @@ $deps = @{
     patch_list = "depsrc/wineditline-$wineditline_version.patch.list"
     patched_files = "depsrc/wineditline-$wineditline_version.patch.files"
     move_to = "wineditline"
+  }
+  cglm = @{
+    version = "$cglm_version"
+    tarfile = "depsrc/cglm-$cglm_version.tar.gz"
+    unpacks_as = "cglm-$cglm_version"
+    patch_list = "depsrc/cglm-$cglm_version.patch.list"
+    patched_files = "depsrc/cglm-$cglm_version.patch.files"
+    move_to = "cglm"
   }
 }
 

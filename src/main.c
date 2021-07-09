@@ -172,11 +172,13 @@ int main(int argc, char * argv[]) {
     }
     log_info("Starting program\n");
     console_setup();
+
     if (config_false(config_headless())) {
         render_configure();
         render_initialize();
 
-        render_ctriangle();
+        //render_ctriangle();
+        render_look();
 
         while(!render_should_close() && g_running)
         {
